@@ -15,7 +15,6 @@ class User{
         lastName: String,
         email: String,
         pass: String,
-        profilePictureUrl: String?,
         isAuthenticated: Boolean
     )
     {
@@ -24,7 +23,6 @@ class User{
         this.lastName=lastName
         this.email=email
         this.pass=pass
-        this.profilePictureUrl=profilePictureUrl
         this.isAuthenticated=isAuthenticated
 
 

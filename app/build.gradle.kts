@@ -42,7 +42,14 @@ android {
 
 dependencies {
     implementation(libs.androidx.activity.compose.v1101)
+    implementation(libs.androidx.material.icons.extended.android)
     implementation(libs.androidx.material.android)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.ui)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.foundation)
+    implementation(libs.firebase.firestore.ktx)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
