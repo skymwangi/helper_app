@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.Icons
@@ -26,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -38,9 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
@@ -52,7 +47,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.helperapp.data.AuthViewModel
 import com.example.helperapp.navigation.route_home
 import com.example.helperapp.navigation.route_login
-import com.example.helperapp.ui.theme.Nude
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -89,6 +83,9 @@ fun Registerscreen(navController: NavHostController) {
     )
     var county by remember { mutableStateOf(TextFieldValue("")) }
     var countyError by remember { mutableStateOf(false) }
+    val auth = FirebaseAuth.getInstance()
+    val authViewModel= AuthViewModel(navController, LocalContext.current)
+
 
 
 
@@ -98,7 +95,13 @@ fun Registerscreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(brush = Brush.horizontalGradient(
+                colors = listOf(
+                    Color(0xFF7D5260),
+                    Color(0xFFFAF3E0),
+                    Color.Magenta
+                )
+            ))
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
@@ -115,7 +118,7 @@ fun Registerscreen(navController: NavHostController) {
             label = { Text(text = "First Name",
                 color = Color.Black) },
             isError = errorMessage.isNotBlank(),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -132,7 +135,7 @@ fun Registerscreen(navController: NavHostController) {
             label = { Text(text = "Last Name",
                 color = Color.Black) },
             isError = errorMessage.isNotBlank(),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -149,7 +152,7 @@ fun Registerscreen(navController: NavHostController) {
             label = { Text(text = "Email",
                 color = Color.Black) },
             isError = errorMessage.isNotBlank(),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -166,7 +169,7 @@ fun Registerscreen(navController: NavHostController) {
             label = { Text(text = "Password",
                 color = Color.Black) },
             isError = errorMessage.isNotBlank(),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -192,7 +195,7 @@ fun Registerscreen(navController: NavHostController) {
                 color = Color.Black) },
             isError = errorMessage.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -224,7 +227,7 @@ fun Registerscreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
-            colors = TextFieldDefaults.colors(focusedIndicatorColor = Nude,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Magenta,
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
                 cursorColor = Color.Black,
@@ -243,7 +246,7 @@ fun Registerscreen(navController: NavHostController) {
         if (isLoading) {
             CircularProgressIndicator()
         } else {
-            Button(onClick = {
+            Button(onClick = Button@{
                 showError = false
                 errorMessage = ""
 
@@ -290,52 +293,83 @@ fun Registerscreen(navController: NavHostController) {
                 }
 
                 isLoading = true
+//
+//                Button(onClick = {
+//                    val error = validateInputs(
+//                        firstName = firstName.text,
+//                        lastName = lastName.text,
+//                        email = email.text,
+//                        pass = pass.text,
+//                        confpass = confpass.text,
+//                        county = county.text,
+//                        counties = counties
+//                    )
+//                    if (error != null) {
+//                        showError = true
+//                        errorMessage = error
+//                        return@Button
+//                    }
 
-                val auth = FirebaseAuth.getInstance()
-                val firestore = FirebaseFirestore.getInstance()
-
-                auth.createUserWithEmailAndPassword(email.text, pass.text)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val uid = auth.currentUser?.uid
-                            if (uid != null) {
-                                val user = hashMapOf(
-                                    "firstName" to firstName.text,
-                                    "lastName" to lastName.text,
-                                    "email" to email.text,
-                                    "county" to county.text,
-                                    "profilePicUrl" to null
-                                )
-
-                                firestore.collection("users").document(uid).set(user)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        navController.navigate("home")
-                                    }
-                                    .addOnFailureListener { e ->
-                                        isLoading = false
-                                        showError = true
-                                        errorMessage = "Failed to save user info: ${e.message}"
-                                    }
-                            }
-                        } else {
-                            isLoading = false
-                            showError = true
-                            errorMessage = "Registration failed: ${task.exception?.message}"
+                    authViewModel.signup(
+                        firstName = firstName.text,
+                        lastName = lastName.text,
+                        email = email.text,
+                        pass = pass.text,
+                        county = county.text,
+                        confpass= confpass.text,
+                        isAdmin = email.text.endsWith("@adminvolunteers.org")
+                    )
+                    { userId: String? ->
+                if (userId != null) {
+                    val userData = mapOf(
+                        "firstName" to firstName.text,
+                        "lastName" to lastName.text,
+                        "email" to email.text,
+                        "county" to county.text,
+                        "password" to pass.text // Save the password in Firestore
+                    )
+                    FirebaseFirestore.getInstance().collection("users").document(userId)
+                        .set(userData)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Registration successful!", Toast.LENGTH_SHORT).show()
+                            navController.navigate(route_home)
                         }
-                    }
-            }) {
-                Text(text = "Register")
+                        .addOnFailureListener { e ->
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }else{
+                    Toast.makeText(context, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show()
+                }
             }
-        }
 
-        if (showError) {
+
+
+                },
+                colors = ButtonDefaults.buttonColors(Color.Magenta)) {
+
+
+                    Text(text = "Register")
+                }
+            }
+
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TextButton(
+            onClick = {
+                navController.navigate(route_login)
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
             Text(
-                text = errorMessage,
-                color = Color.Red,
-                modifier = Modifier.padding(top = 8.dp)
+                text = "Already have an account? Log in",
+                color = Color.Black,
+                fontSize = 16.sp
             )
         }
+
+
+
 
 
 //        Spacer(modifier = Modifier.height(12.dp))
@@ -357,19 +391,34 @@ fun Registerscreen(navController: NavHostController) {
 //
 //        Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(
-            onClick = {
-                navController.navigate(route_login)
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(text = "Already have an account? Log in",
-                color = Nude)
-        }
 
 
 
     }
+}
+
+private fun validateInputs(
+    firstName: String,
+    lastName: String,
+    email: String,
+    pass: String,
+    confpass: String,
+    county: String,
+    counties: List<String>
+): String? {
+    if (firstName.isBlank()) return "First name is required"
+    if (lastName.isBlank()) return "Last name is required"
+    if (email.isBlank()) return "Email is required"
+    if (pass.isBlank()) return "Password is required"
+    if (confpass != pass) return "Passwords do not match"
+    if (county.isBlank()) return "County is required"
+    if (!counties.any {
+            it.equals(
+                county.trim(),
+                ignoreCase = true
+            )
+        }) return "Please enter a valid Kenyan county"
+    return null
 }
 
 @Preview

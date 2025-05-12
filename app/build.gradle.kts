@@ -50,6 +50,8 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.foundation)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.play.services.location)
+    implementation(libs.accompanist.permissions)
 
 
     implementation(libs.androidx.core.ktx)

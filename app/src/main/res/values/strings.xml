@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Helper App</string>
+<!--    <string name="app_name">Helper App</string>-->
+    <string name="HelperApp" >Helper App</string>
 </resources>

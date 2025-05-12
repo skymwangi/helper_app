@@ -19,5 +19,9 @@ dependencyResolutionManagement {
     }
 }
 
+
+
+
+
 rootProject.name = "Helper App"
 include(":app")

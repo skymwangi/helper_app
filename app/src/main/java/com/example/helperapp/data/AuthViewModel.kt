@@ -4,14 +4,13 @@ package com.example.helperapp.data
 import android.content.Context
 import android.widget.Toast
 import androidx.navigation.NavHostController
-import com.example.helperapp.navigation.route_login
-import com.google.firebase.auth.FirebaseAuth
 import com.example.helperapp.model.User
 import com.example.helperapp.navigation.route_home
+import com.example.helperapp.navigation.route_login
 import com.example.helperapp.navigation.route_register
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.database.FirebaseDatabase
 
 
 class AuthViewModel(
@@ -20,6 +19,7 @@ class AuthViewModel(
 ) {
 
     var mAuth: FirebaseAuth
+    var onResult:( (Boolean) -> Unit )?= null
 
 
     init {
@@ -32,7 +32,10 @@ class AuthViewModel(
         lastName: String,
         email: String,
         pass: String,
-        confpass: String
+        county: String,
+        confpass: String,
+        isAdmin: Boolean,
+        function: (String?) -> Any
     ) {
 
 
@@ -49,33 +52,44 @@ class AuthViewModel(
                     val uid = task.result?.user?.uid
                     if (uid != null) {
                         val userdata = User(
-                            firstName, lastName, email, pass,uid,
-                            isAuthenticated = true
+                            firstName=firstName, lastName=lastName, email=email,
+                            pass=pass,uid=uid,county=county,isAdmin=isAdmin,profilePictureUrl = null
                         )
-                        val regRef = FirebaseDatabase.getInstance().getReference()
-                            .child("Users/" + mAuth.currentUser!!.uid)
-                        regRef.setValue(userdata).addOnCompleteListener {
-
-                            if (it.isSuccessful) {
+                        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        db.collection("users").document(uid).set(userdata)
+                            .addOnSuccessListener {
                                 Toast.makeText(
                                     context,
                                     "Registered Successfully",
                                     Toast.LENGTH_LONG
                                 ).show()
-                                navController.navigate(route_home)
+                                // Check if the user is admin
+//                                        val isAdmin = document.getBoolean("isAdmin") == true
+                                if (isAdmin) {
+                                    navController.navigate("admin") {
+                                        popUpTo("admin") { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate(route_home) {
+                                        popUpTo("home") { inclusive = true }
+                                    }
+                                }
+                            }
 
-                            } else {
-                                val error = it.exception
+                            .addOnFailureListener { error ->
                                 Toast.makeText(
                                     context,
-                                    "Login failed: ${error?.localizedMessage ?:"Unknown error"}",
+                                    "Failed to save user data: ${error.localizedMessage ?: "Unknown error"}",
                                     Toast.LENGTH_LONG
                                 ).show()
                                 navController.navigate(route_register)
                             }
-                        }
+
                     }
                 } else {
+                    Toast.makeText(context,"Error: ${task.exception?.message}",Toast.LENGTH_SHORT).show()
+
+
                     navController.navigate(route_register)
                 }
 
@@ -87,26 +101,42 @@ class AuthViewModel(
 
     fun login(email: String, pass: String) {
 
-        mAuth.signInWithEmailAndPassword(email, pass).addOnCompleteListener {task ->
-            if (task.isSuccessful) {
-                Toast.makeText(context, "Succeffully Logged in", Toast.LENGTH_LONG).show()
-                navController.navigate(route_home)
-//                navController.navigate(route_home)TO TAKE YOU TO A DIIFFERNT PAGE
-            } else {
 
-                val exception = task.exception
-                val userMessage=when(exception){
-                    is FirebaseAuthInvalidUserException ->
-                        "You do not have an account"
-                    is FirebaseAuthInvalidCredentialsException ->
-                        "Incorrect password"
-                    else -> "Login failed:${exception?.localizedMessage ?:"Unknown error"}"
+        mAuth.signInWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val uid = task.result?.user?.uid
+                if (uid != null) {
+                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    db.collection("users").document(uid).get().addOnSuccessListener { document ->
+                        val isAdmin = document.getBoolean("isAdmin") == true
+                        if (isAdmin) {
+                            navController.navigate("admin") // Replace "admin" with your actual admin route
+                        } else {
+                            navController.navigate(route_home)
+                        }
+                        onResult?.invoke(true)
+                    }.addOnFailureListener {
+                        navController.navigate(route_home)
+                        onResult?.invoke(true)
+                    }
+                }else{
+                    onResult?.invoke(false)
                 }
-                Toast.makeText(context,userMessage, Toast.LENGTH_LONG).show()
+            } else {
+                val exception = task.exception
+                val userMessage = when (exception) {
+                    is FirebaseAuthInvalidUserException -> "You do not have an account"
+                    is FirebaseAuthInvalidCredentialsException -> "Incorrect password"
+                    else -> "Login failed: ${exception?.localizedMessage ?: "Unknown error"}"
+                }
+                Toast.makeText(context, userMessage, Toast.LENGTH_LONG).show()
+                onResult?.invoke(false)
             }
         }
-
     }
+
+
+
 
     fun logout(){
         mAuth.signOut()
